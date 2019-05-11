@@ -1,5 +1,5 @@
 //Files to be cached for offline
-const filesCached = [
+const urlsToCache = [
     '/',
     '/index.html',
     '/restaurant.html',
@@ -20,10 +20,35 @@ const filesCached = [
     '/img/10.jpg'
 ];
 
-self.addEventListener('install', function(e) {
-    e.waitUntil(
+// Add array of files to be cahed for offline use.
+self.addEventListener('install', function(event) {
+    event.waitUntil(
         caches.open('rest_static_v1').then(function(cache) {
-            return cache.addAll(filesCached);
+            return cache.addAll(urlsToCache);
+        })
+    );
+});
+
+// Fetch files from cache for offline or retrieve them as normal
+self.addEventListener('fetch', function(event) {
+    event.respondWith(
+        caches.match(event.request).then(function(response) {
+            if (response) {
+                return response;
+            }
+            else {
+                return fetch(event.request)
+                .then(function(response) {
+                    const responseClone = response.clone();
+                    caches.open('rest_static_v1').then(function(cache) {
+                        cache.put(event.request, responseClone);
+                    })
+                    return response;
+                })
+                .catch(function(error) {
+                    console.error(error);
+                });
+            }
         })
     );
 });
